@@ -1,0 +1,9 @@
+{
+    "skip_pcied": false,
+    "skip_fancontrol": true,
+    "skip_thermalctld": true,
+    "skip_ledd": false,
+    "skip_xcvrd": false,
+    "skip_psud": true,
+    "skip_syseepromd": false
+}
