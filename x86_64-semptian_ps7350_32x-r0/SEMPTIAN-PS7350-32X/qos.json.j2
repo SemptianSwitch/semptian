@@ -1,10 +1,241 @@
-{%- macro generate_tc_to_pg_map() %}
+{
     "TC_TO_PRIORITY_GROUP_MAP": {
-        "AZURE": {
+        "DEFAULT": {
+            "0": "0",
+            "1": "0",
+            "2": "0",
             "3": "3",
-            "4": "4"
+            "4": "1",
+            "5": "5",
+            "6": "6",
+            "7": "0"
         }
     },
-{%- endmacro %}
-
-{%- include 'qos_config.j2' %}
+    "MAP_PFC_PRIORITY_TO_QUEUE": {
+        "DEFAULT": {
+            "0": "0",
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7"
+        }
+    },
+    "TC_TO_QUEUE_MAP": {
+        "DEFAULT": {
+            "0": "0",
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7"
+        }
+    },
+    "PFC_PRIORITY_TO_PRIORITY_GROUP_MAP": {
+        "DEFAULT": {
+            "0": "2"
+        }
+    },
+    "DSCP_TO_TC_MAP": {
+        "DEFAULT": {
+            "0": "0",
+            "1": "0",
+            "2": "0",
+            "3": "0",
+            "4": "0",
+            "5": "0",
+            "6": "0",
+            "7": "0",
+            "8": "1",
+            "9": "1",
+            "10": "1",
+            "11": "1",
+            "12": "1",
+            "13": "1",
+            "14": "1",
+            "15": "1",
+            "16": "2",
+            "17": "2",
+            "18": "2",
+            "19": "2",
+            "20": "2",
+            "21": "2",
+            "22": "2",
+            "23": "2",
+            "24": "3",
+            "25": "3",
+            "26": "3",
+            "27": "3",
+            "28": "3",
+            "29": "3",
+            "30": "3",
+            "31": "3",
+            "32": "4",
+            "33": "4",
+            "34": "4",
+            "35": "4",
+            "36": "4",
+            "37": "4",
+            "38": "4",
+            "39": "4",
+            "40": "5",
+            "41": "5",
+            "42": "5",
+            "43": "5",
+            "44": "5",
+            "45": "5",
+            "46": "5",
+            "47": "5",
+            "48": "6",
+            "49": "6",
+            "50": "6",
+            "51": "6",
+            "52": "6",
+            "53": "6",
+            "54": "6",
+            "55": "6",
+            "56": "7",
+            "57": "7",
+            "58": "7",
+            "59": "7",
+            "60": "7",
+            "61": "7",
+            "62": "7",
+            "63": "7"
+        }
+    },
+    "SCHEDULER": {
+        "scheduler.6": {
+            "type": "DWRR",
+            "priority": "7",
+            "weight": "1"
+        },
+        "scheduler.5": {
+            "type": "DWRR",
+            "priority": "0",
+            "weight": "255"
+        },
+        "scheduler.4": {
+            "type": "DWRR",
+            "priority": "0",
+            "weight": "85"
+        },
+        "scheduler.3": {
+            "type": "DWRR",
+            "priority": "0",
+            "weight": "64"
+        },
+        "scheduler.2": {
+            "type": "DWRR",
+            "priority": "0",
+            "weight": "16"
+        },
+        "scheduler.0": {
+            "type": "DWRR",
+            "priority": "0",
+            "weight": "1"
+        }
+    },
+    "PORT_QOS_MAP": {
+        "Ethernet0,Ethernet4,Ethernet8,Ethernet12,Ethernet16,Ethernet20,Ethernet24,Ethernet28,Ethernet32,Ethernet36,Ethernet40,Ethernet44,Ethernet48,Ethernet52,Ethernet56,Ethernet60,Ethernet64,Ethernet68,Ethernet72,Ethernet76,Ethernet80,Ethernet84,Ethernet88,Ethernet92,Ethernet96,Ethernet100,Ethernet104,Ethernet108,Ethernet112,Ethernet116,Ethernet120,Ethernet124": {
+            "dscp_to_tc_map": "[DSCP_TO_TC_MAP|DEFAULT]",
+            "tc_to_pg_map": "[TC_TO_PRIORITY_GROUP_MAP|DEFAULT]",
+            "tc_to_queue_map": "[TC_TO_QUEUE_MAP|DEFAULT]",
+            "pfc_to_pg_map": "[PFC_PRIORITY_TO_PRIORITY_GROUP_MAP|DEFAULT]",
+            "pfc_to_queue_map": "[MAP_PFC_PRIORITY_TO_QUEUE|DEFAULT]",
+            "pfc_enable": "0"
+        }
+    },
+    "WRED_PROFILE": {
+        "LOSSLESS_25GBE": {
+            "ecn": "ecn_all",
+            "wred_green_enable": "true",
+            "green_min_threshold": "100000",
+            "green_max_threshold": "100000",
+            "green_drop_probability": "0",
+            "wred_yellow_enable": "true",
+            "yellow_min_threshold": "100000",
+            "yellow_max_threshold": "100000",
+            "yellow_drop_probability": "0",
+            "wred_red_enable": "true",
+            "red_min_threshold": "100000",
+            "red_max_threshold": "100000",
+            "red_drop_probability": "0"
+        },
+        "LOSSLESS_100GBE": {
+            "ecn": "ecn_all",
+            "wred_green_enable": "true",
+            "green_min_threshold": "100000",
+            "green_max_threshold": "100000",
+            "green_drop_probability": "0",
+            "wred_yellow_enable": "true",
+            "yellow_min_threshold": "100000",
+            "yellow_max_threshold": "100000",
+            "yellow_drop_probability": "0",
+            "wred_red_enable": "true",
+            "red_min_threshold": "100000",
+            "red_max_threshold": "100000",
+            "red_drop_probability": "0"
+        },
+        "LOSSY_25GBE": {
+            "ecn": "ecn_all",
+            "wred_green_enable": "true",
+            "green_min_threshold": "100000",
+            "green_max_threshold": "100000",
+            "green_drop_probability": "0",
+            "wred_yellow_enable": "true",
+            "yellow_min_threshold": "100000",
+            "yellow_max_threshold": "100000",
+            "yellow_drop_probability": "0",
+            "wred_red_enable": "true",
+            "red_min_threshold": "100000",
+            "red_max_threshold": "100000",
+            "red_drop_probability": "0"
+        },
+        "LOSSY_100GBE": {
+            "ecn": "ecn_all",
+            "wred_green_enable": "true",
+            "green_min_threshold": "100000",
+            "green_max_threshold": "100000",
+            "green_drop_probability": "0",
+            "wred_yellow_enable": "true",
+            "yellow_min_threshold": "100000",
+            "yellow_max_threshold": "100000",
+            "yellow_drop_probability": "0",
+            "wred_red_enable": "true",
+            "red_min_threshold": "100000",
+            "red_max_threshold": "100000",
+            "red_drop_probability": "0"
+        }
+    },
+    "QUEUE": {
+        "Ethernet0,Ethernet4,Ethernet8,Ethernet12,Ethernet16,Ethernet20,Ethernet24,Ethernet28,Ethernet32,Ethernet36,Ethernet40,Ethernet44,Ethernet48,Ethernet52,Ethernet56,Ethernet60,Ethernet64,Ethernet68,Ethernet72,Ethernet76,Ethernet80,Ethernet84,Ethernet88,Ethernet92,Ethernet96,Ethernet100,Ethernet104,Ethernet108,Ethernet112,Ethernet116,Ethernet120,Ethernet124|0": {
+            "scheduler": "[SCHEDULER|scheduler.0]",
+            "wred_profile": "[WRED_PROFILE|LOSSY_25GBE]"
+        },
+        "Ethernet0,Ethernet4,Ethernet8,Ethernet12,Ethernet16,Ethernet20,Ethernet24,Ethernet28,Ethernet32,Ethernet36,Ethernet40,Ethernet44,Ethernet48,Ethernet52,Ethernet56,Ethernet60,Ethernet64,Ethernet68,Ethernet72,Ethernet76,Ethernet80,Ethernet84,Ethernet88,Ethernet92,Ethernet96,Ethernet100,Ethernet104,Ethernet108,Ethernet112,Ethernet116,Ethernet120,Ethernet124|0": {
+            "scheduler": "[SCHEDULER|scheduler.2]",
+            "wred_profile": "[WRED_PROFILE|LOSSY_25GBE]"
+        },
+        "Ethernet0,Ethernet4,Ethernet8,Ethernet12,Ethernet16,Ethernet20,Ethernet24,Ethernet28,Ethernet32,Ethernet36,Ethernet40,Ethernet44,Ethernet48,Ethernet52,Ethernet56,Ethernet60,Ethernet64,Ethernet68,Ethernet72,Ethernet76,Ethernet80,Ethernet84,Ethernet88,Ethernet92,Ethernet96,Ethernet100,Ethernet104,Ethernet108,Ethernet112,Ethernet116,Ethernet120,Ethernet124|0": {
+            "scheduler": "[SCHEDULER|scheduler.3]",
+            "wred_profile": "[WRED_PROFILE|LOSSY_25GBE]"
+        },
+        "Ethernet0,Ethernet4,Ethernet8,Ethernet12,Ethernet16,Ethernet20,Ethernet24,Ethernet28,Ethernet32,Ethernet36,Ethernet40,Ethernet44,Ethernet48,Ethernet52,Ethernet56,Ethernet60,Ethernet64,Ethernet68,Ethernet72,Ethernet76,Ethernet80,Ethernet84,Ethernet88,Ethernet92,Ethernet96,Ethernet100,Ethernet104,Ethernet108,Ethernet112,Ethernet116,Ethernet120,Ethernet124|0": {
+            "scheduler": "[SCHEDULER|scheduler.4]",
+            "wred_profile": "[WRED_PROFILE|LOSSY_25GBE]"
+        },
+        "Ethernet0,Ethernet4,Ethernet8,Ethernet12,Ethernet16,Ethernet20,Ethernet24,Ethernet28,Ethernet32,Ethernet36,Ethernet40,Ethernet44,Ethernet48,Ethernet52,Ethernet56,Ethernet60,Ethernet64,Ethernet68,Ethernet72,Ethernet76,Ethernet80,Ethernet84,Ethernet88,Ethernet92,Ethernet96,Ethernet100,Ethernet104,Ethernet108,Ethernet112,Ethernet116,Ethernet120,Ethernet124|0": {
+            "scheduler": "[SCHEDULER|scheduler.5]",
+            "wred_profile": "[WRED_PROFILE|LOSSLESS_25GBE]"
+        },
+        "Ethernet0,Ethernet4,Ethernet8,Ethernet12,Ethernet16,Ethernet20,Ethernet24,Ethernet28,Ethernet32,Ethernet36,Ethernet40,Ethernet44,Ethernet48,Ethernet52,Ethernet56,Ethernet60,Ethernet64,Ethernet68,Ethernet72,Ethernet76,Ethernet80,Ethernet84,Ethernet88,Ethernet92,Ethernet96,Ethernet100,Ethernet104,Ethernet108,Ethernet112,Ethernet116,Ethernet120,Ethernet124|0": {
+            "scheduler": "[SCHEDULER|scheduler.6]",
+            "wred_profile": "[WRED_PROFILE|LOSSY_25GBE]"
+        }
+    }
+}

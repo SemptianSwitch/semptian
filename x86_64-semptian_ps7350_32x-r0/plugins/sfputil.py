@@ -7,6 +7,7 @@ try:
     import time
     import os
     import sys
+    import re
     from ctypes import create_string_buffer
     from sonic_sfp.sfputilbase import SfpUtilBase
     from sonic_sfp.sff8472 import sff8472InterfaceId
@@ -14,6 +15,7 @@ try:
     from sonic_sfp.sff8436 import sff8436InterfaceId
     from sonic_sfp.sff8436 import sff8436Dom
     from sonic_sfp.inf8628 import inf8628InterfaceId
+    from sonic_py_common.interface import backplane_prefix
 except ImportError as e:
     raise ImportError("%s - required module not found" % str(e))
 
@@ -37,9 +39,57 @@ QSFP_TYPE = "QSFP"
 OSFP_TYPE = "OSFP"
 QSFP_DD_TYPE = "QSFP_DD"
 
-SFP_I2C_START = 25
+
 I2C_EEPROM_PATH = '/sys/bus/i2c/devices/{0}-0050/eeprom'
 
+def DBG_PRINT(str):
+    syslog.openlog("semptian-sfputil")
+    syslog.syslog(syslog.LOG_INFO, str)
+    syslog.closelog()
+
+def get_port_cpld_hwmon_offset():
+    sysfs = "cat "
+    sysfs = sysfs + '/sys/class/hwmon/hwmon{0}/name'
+    
+    offset = 3
+    cpld_name = 'xc3400an_port_cpld'
+    for index in range(0, 10):
+        cmd=sysfs.format(index)
+        ret = os.popen(cmd)
+        adaptername=ret.read()
+        
+        #print("cmd:%s  adaptername:%s find result:%s" % (cmd, adaptername, adaptername.find(cpld_name)))
+        
+        if adaptername.find(cpld_name) >= 0:
+            #print("get:%s  adaptername:%s" % (cmd, adaptername))
+            offset = index 
+            ret.close()       
+            break
+        else:
+            ret.close()
+            
+    return  offset 
+
+def get_mg_cpld_adapter_offset():
+    sysfs = "cat "
+    sysfs = sysfs + '/sys/bus/i2c/devices/i2c-{0}/name'
+
+    offset = 0
+    for index in range(0, 10):
+        cmd=sysfs.format(index)
+        ret = os.popen(cmd)
+        adaptername=ret.read()
+        #print("cmd:%s  adaptername:%s" % (cmd, adaptername))
+        if adaptername.find('cpld mg I2C adapter') >= 0:
+            offset = index
+            #print("get cmd:%s  adaptername:%s" % (cmd, adaptername))
+            ret.close()  
+            break 
+        else:
+            ret.close() 
+            
+    return  offset 
+    
 class SfpUtil(SfpUtilBase):
     """Platform-specific SfpUtil class"""
 
@@ -48,58 +98,35 @@ class SfpUtil(SfpUtilBase):
     OSFP_PORT_START = 0
     OSFP_PORT_END = 31
     PORTS_IN_BLOCK = 34
-
-    BASE_OOM_PATH = "/sys/bus/i2c/devices/{0}-0050/"
-    cmd = "ls "
-    cmd = cmd + '/sys/bus/i2c/devices/5-0011/hwmon/'
-    ret = os.popen(cmd)
-    temp ='/sys/bus/i2c/devices/5-0011/hwmon/' +   ret.read()
-    temp = temp[:-1]
-    temp = temp + '/'
-    BASE_CPLD1_PATH = temp
     
-
+    SFP_ADAPTER_OFFSET = 17
+    
+    BASE_OOM_PATH = "/sys/bus/i2c/devices/{0}-0050/"
+    #cmd = "ls "
+    #cmd = cmd + '/sys/bus/i2c/devices/5-0011/hwmon/'
+    #ret = os.popen(cmd)
+    #temp ='/sys/bus/i2c/devices/5-0011/hwmon/' +   ret.read()
+    #temp = temp[:-1]
+    #temp = temp + '/'
+    #BASE_CPLD1_PATH = temp
+    
+    index = get_port_cpld_hwmon_offset()        
+    path = '/sys/class/hwmon/hwmon{0}/'
+    BASE_CPLD1_PATH = path.format(index)
+    #print("SfpUtil BASE_CPLD1_PATH %s" % BASE_CPLD1_PATH)
+    mg_adapterid = get_mg_cpld_adapter_offset()
+    SFP_I2C_START = SFP_ADAPTER_OFFSET + mg_adapterid
+    
     _port_to_is_present = {}
     _port_to_lp_mode = {}
 
-    _port_to_eeprom_mapping = {}
-    _port_to_i2c_mapping = {
-        0: [1, 18],
-        1: [2, 19],
-        2: [3, 20],
-        3: [4, 21],
-        4: [5, 22],
-        5: [6, 23],
-        6: [7, 24],
-        7: [8, 25],
-        8: [9, 26],
-        9: [10, 27],
-        10: [11, 28],
-        11: [12, 29],
-        12: [13, 30],
-        13: [14, 31],
-        14: [15, 32],
-        15: [16, 33],
-        16: [17, 34],
-        17: [18, 35],
-        18: [19, 36],
-        19: [20, 37],
-        20: [21, 38],
-        21: [22, 39],
-        22: [23, 40],
-        23: [24, 41],
-        24: [25, 42],
-        25: [26, 43],
-        26: [27, 44],
-        27: [28, 45],
-        28: [29, 46],
-        29: [30, 47],
-        30: [31, 48],
-        31: [32, 49],
-        32: [33, 50],
-        33: [34, 51],
-    }
+    sfp_port_cur_present_state = {}
+        
+    for i in range(PORT_START, PORT_END+1):
+        sfp_port_cur_present_state[i] = '0'
 
+    _port_to_eeprom_mapping = {}
+            
     @property
     def port_start(self):
         return self.PORT_START
@@ -124,14 +151,15 @@ class SfpUtil(SfpUtilBase):
         eeprom_path = self.BASE_OOM_PATH + "eeprom"
 
         for x in range(0, self.port_end+1):
+            sfp_id = self.SFP_ADAPTER_OFFSET + self.mg_adapterid + x
             self.port_to_eeprom_mapping[x] = eeprom_path.format(
-                self._port_to_i2c_mapping[x][1]
+                sfp_id
             )
 
         SfpUtilBase.__init__(self)
 
     def _get_eeprom_path(self, port_num):
-        port_to_i2c_mapping = SFP_I2C_START + port_num
+        port_to_i2c_mapping = self.SFP_I2C_START + port_num
         port_eeprom_path = I2C_EEPROM_PATH.format(port_to_i2c_mapping)
         return port_eeprom_path
 
@@ -143,6 +171,7 @@ class SfpUtil(SfpUtilBase):
                 sysfs_sfp_i2c_client_eeprom_path,
                 mode="rb", buffering=0)
         except IOError:
+            print("open sfp eeprom error port_num:%s sysfs:%s" % (port_num, sysfs_sfp_i2c_client_eeprom_path))
             return None
 
         for i in range(0, num_bytes):
@@ -153,6 +182,7 @@ class SfpUtil(SfpUtilBase):
             raw = eeprom.read(num_bytes)
         except IOError:
             eeprom.close()
+            print("open sfp eeprom error port_num:%s sysfs:%s" % (port_num, sysfs_sfp_i2c_client_eeprom_path))
             return None
 
         try:
@@ -347,7 +377,10 @@ class SfpUtil(SfpUtilBase):
         port_dict = {}
         ori_present = {}
         forever = False
+        change_status = 0
 
+        #DBG_PRINT("#################get_transceiver_change_event sfp_port_cur_present_state {}".format(self.sfp_port_cur_present_state))
+        
         if timeout == 0:
             forever = True
         elif timeout > 0:
@@ -365,15 +398,26 @@ class SfpUtil(SfpUtilBase):
 
         # for i in range(self.port_start, self.port_end+1):
         #        ori_present[i]=self.get_presence(i)
-        time.sleep(3)
-        for i in range(self.port_start, self.port_end-1):
+        #time.sleep(3)
+        for i in range(self.port_start, self.port_end+1):
             value = self.get_presence(i)
             if value:
                 port_dict[i] = '1'
             else:
-                port_dict[i] = '0'
+                port_dict[i] = '0'    
+            
+            if self.sfp_port_cur_present_state[i] !=  port_dict[i]:
+                self.sfp_port_cur_present_state[i] =  port_dict[i]
+                change_status = 1
+            else:
+                del port_dict[i]            
             #print("yyyy {} {}".format(i,port_dict[i]))
+            
+        if 1 == change_status:
+          DBG_PRINT("get_transceiver_change_event port_dict {} port_start {} port_end {}".format(port_dict, self.port_start, self.port_end))  
+          
         return True, port_dict
+        
         while timeout >= 0:
             change_status = 0
 
@@ -402,3 +446,107 @@ class SfpUtil(SfpUtilBase):
                     return True, {}
         print("get_evt_change_event: Should not reach here.")
         return False, {}
+        
+    def read_porttab_mappings(self, porttabfile, asic_inst=0):
+        logical = []
+        logical_to_bcm = {}
+        logical_to_physical = {}
+        physical_to_logical = {}
+        last_fp_port_index = 0
+        last_portname = ""
+        first = 1
+        port_pos_in_file = 0
+        parse_fmt_port_config_ini = False
+
+        try:
+            f = open(porttabfile)
+        except:
+            raise
+
+        parse_fmt_port_config_ini = (os.path.basename(porttabfile) == "port_config.ini")
+
+        # Read the porttab file and generate dicts
+        # with mapping for future reference.
+        #
+        # TODO: Refactor this to use the portconfig.py module that now
+        # exists as part of the sonic-config-engine package.
+        title = []
+        for line in f:
+            line.strip()
+            if re.search("^#", line) is not None:
+                # The current format is: # name lanes alias index speed
+                # Where the ordering of the columns can vary
+                title = line.split()[1:]
+                continue
+
+            # Parsing logic for 'port_config.ini' file
+            if (parse_fmt_port_config_ini):
+                # bcm_port is not explicitly listed in port_config.ini format
+                # Currently we assume ports are listed in numerical order according to bcm_port
+                # so we use the port's position in the file (zero-based) as bcm_port
+                portname = line.split()[0]
+
+                # Ignore if this is an internal backplane interface
+                if portname.startswith(backplane_prefix()):
+                    continue
+
+                bcm_port = str(port_pos_in_file)
+
+                if "index" in title:
+                    fp_port_index = int(line.split()[title.index("index")])
+                # Leave the old code for backward compatibility
+                elif "asic_port_name" not in title and len(line.split()) >= 4:
+                    fp_port_index = int(line.split()[3])
+                else:
+                    fp_port_index = portname.split("Ethernet").pop()
+                    fp_port_index = int(fp_port_index.split("s").pop(0))/4
+            else:  # Parsing logic for older 'portmap.ini' file
+                (portname, bcm_port) = line.split("=")[1].split(",")[:2]
+
+                fp_port_index = portname.split("Ethernet").pop()
+                fp_port_index = int(fp_port_index.split("s").pop(0))/4
+
+            if ((len(self.sfp_ports) > 0) and (fp_port_index not in self.sfp_ports)):
+                continue
+
+            if first == 1:
+                # Initialize last_[physical|logical]_port
+                # to the first valid port
+                last_fp_port_index = fp_port_index
+                last_portname = portname
+                first = 0
+
+            logical.append(portname)
+
+            # Mapping of logical port names available on a system to ASIC instance
+            self.logical_to_asic[portname] = asic_inst
+
+            logical_to_bcm[portname] = "xe" + bcm_port
+            logical_to_physical[portname] = [fp_port_index]
+            if physical_to_logical.get(fp_port_index) is None:
+                physical_to_logical[fp_port_index] = [portname]
+            else:
+                physical_to_logical[fp_port_index].append(
+                    portname)
+
+            last_fp_port_index = fp_port_index
+            last_portname = portname
+
+            port_pos_in_file += 1
+
+        self.logical.extend(logical)
+        self.logical_to_bcm.update(logical_to_bcm)
+        self.logical_to_physical.update(logical_to_physical)
+        self.physical_to_logical.update(physical_to_logical)
+
+        """
+        print("logical: " + self.logical)
+        print("logical to bcm: " + self.logical_to_bcm)
+        print("logical to physical: " + self.logical_to_physical)
+        print("physical to logical: " + self.physical_to_logical)
+     """
+     
+    def get_asic_id_for_logical_port(self, logical_port):
+        """Returns the asic_id list of physical ports for the given logical port"""
+        return self.logical_to_asic.get(logical_port)
+  
