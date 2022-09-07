@@ -138,5 +138,5 @@ class LedControl(LedControlBase):
                 ret.close() 
             
         path = '/sys/class/hwmon/hwmon{0}/'
-        BASE_CPLD1_PATH = path.format(index)
+        BASE_CPLD1_PATH = path.format(offset)
         self.f_led = BASE_CPLD1_PATH
