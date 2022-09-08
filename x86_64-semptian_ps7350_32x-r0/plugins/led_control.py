@@ -75,7 +75,8 @@ class LedControl(LedControlBase):
 
         port_idx = self._port_name_to_index(portname)
         
-        port_idx=port_idx/4
+        #port_idx=port_idx/4
+        port_idx=port_idx-1
         ledMode = self._port_state_to_mode(port_idx, state)
 
 
