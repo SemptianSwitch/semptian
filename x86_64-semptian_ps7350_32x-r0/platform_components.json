@@ -1,0 +1,11 @@
+{
+    "chassis": {
+        "SEMPTIAN-PS7350-32X": {
+            "component": {
+                "CPLD1": { },
+				"CPLD2": { },
+				"BIOS": { }
+            }
+        }
+    }
+}

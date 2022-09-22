@@ -158,6 +158,30 @@ class SfpUtil(SfpUtilBase):
 
         SfpUtilBase.__init__(self)
 
+    def __write_txt_file(self, file_path, value):
+        try:
+            reg_file = open(file_path, "w")
+        except IOError as e:
+            print("Error: unable to open file: %s" % str(e))
+            return False
+
+        reg_file.write(str(value))
+        reg_file.close()
+
+        return True
+        
+    def __read_txt_file(self, file_path):
+        try:
+            reg_file = open(file_path, "r")
+        except IOError as e:
+            print("Error: unable to open file: %s" % str(e))
+            return False
+
+        data = reg_file.readline().rstrip()
+        reg_file.close()
+
+        return data
+        
     def _get_eeprom_path(self, port_num):
         port_to_i2c_mapping = self.SFP_I2C_START + port_num
         port_eeprom_path = I2C_EEPROM_PATH.format(port_to_i2c_mapping)
@@ -286,7 +310,7 @@ class SfpUtil(SfpUtilBase):
 
         return False
 
-    def get_low_power_mode(self, port_num):
+    def get_low_power_mode_sfp(self, port_num):
         # Check for invalid port_num
         if port_num < self.port_start or port_num > self.port_end:
             return False
@@ -316,7 +340,7 @@ class SfpUtil(SfpUtilBase):
                 eeprom.close()
                 time.sleep(0.01)
 
-    def set_low_power_mode(self, port_num, lpmode):
+    def set_low_power_mode_sfp(self, port_num, lpmode):
         # Check for invalid port_num
         if port_num < self.port_start or port_num > self.port_end:
             return False
@@ -347,12 +371,53 @@ class SfpUtil(SfpUtilBase):
             if eeprom is not None:
                 eeprom.close()
                 time.sleep(0.01)
+                
+    def set_low_power_mode(self, port_num, lpmode):
+        """
+        Sets the lpmode (low power mode) of SFP
+        Args:
+            lpmode: A Boolean, True to enable lpmode, False to disable it
+            Note  : lpmode can be overridden by set_power_override
+        Returns:
+            A boolean, True if lpmode is set successfully, False if not
+        """
+        if port_num < self.port_start or port_num > self.port_end:
+            return False
+                
+        lpmode_path = self.BASE_CPLD1_PATH + "port" + str(port_num) + "_lpmode" 
+        
+        data = "0"
+        if lpmode is not True:
+            data = "0"
+        else:  
+            data = "1" 
+            
+        ret = self.__write_txt_file(lpmode_path, data) #sysfs 1: enable lpmode
+        
+        return ret  
+            
+    def get_low_power_mode(self, port_num):
+        """
+        Retrieves the lpmode (low power mode) status of this SFP
+        Returns:
+            A Boolean, True if lpmode is enabled, False if disabled
+        """
+        if port_num < self.port_start or port_num > self.port_end:
+            return False
+            
+        lpmode_path = self.BASE_CPLD1_PATH + "port" + str(port_num) + "_lpmode" 
 
+        val=self.__read_txt_file(lpmode_path)
+        if val is not None:
+            return int(val, 10)==1
+        else:           
+            return False
+            
     def reset(self, port_num):
         if port_num < self.port_start or port_num > self.port_end:
             return False
 
-        mod_rst_path = self.BASE_CPLD1_PATH + "module_reset_" + str(port_num+1)
+        mod_rst_path = self.BASE_CPLD1_PATH + "module_reset_" + str(port_num)
 
 
         self.__port_to_mod_rst = mod_rst_path
@@ -364,6 +429,10 @@ class SfpUtil(SfpUtilBase):
 
         reg_value = '1'
 
+        
+        reg_file.write(reg_value)
+        time.sleep(0.2)
+        reg_value = '0'
         reg_file.write(reg_value)
         reg_file.close()
 
