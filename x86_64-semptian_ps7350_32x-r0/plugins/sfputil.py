@@ -419,22 +419,9 @@ class SfpUtil(SfpUtilBase):
 
         mod_rst_path = self.BASE_CPLD1_PATH + "module_reset_" + str(port_num)
 
-
-        self.__port_to_mod_rst = mod_rst_path
-        try:
-            reg_file = open(self.__port_to_mod_rst, 'r+')
-        except IOError as e:
-            print("Error: unable to open file: %s" % str(e))
-            return False
-
-        reg_value = '1'
-
-        
-        reg_file.write(reg_value)
+        ret = self.__write_txt_file(mod_rst_path, "0")
         time.sleep(0.2)
-        reg_value = '0'
-        reg_file.write(reg_value)
-        reg_file.close()
+        ret = self.__write_txt_file(mod_rst_path, "1")
 
         return True
 
