@@ -2,9 +2,18 @@
     "chassis": {
         "SEMPTIAN-PS7350-32X": {
             "component": {
-                "CPLD1": { },
-				"CPLD2": { },
-				"BIOS": { }
+                "CPLD1": { 
+                    "firmware":"cpld1_firmware",
+                    "version":"cpld1_version"
+                },
+                "CPLD2": { 
+                    "firmware":"cpld2_firmware",
+                    "version":"cpld2_version"
+                },
+                "BIOS": { 
+                    "firmware":"bios_firmware",
+                    "version":"bios_version"
+                }
             }
         }
     }
